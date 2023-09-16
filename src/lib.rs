@@ -1,5 +1,55 @@
-//! A [libunftp](https://github.com/bolcom/libunftp) wrapper storage back-end 
+#![deny(clippy::all)]
+#![deny(missing_docs)]
+#![forbid(unsafe_code)]
+#![doc(html_root_url = "https://docs.rs/unftp-sbe-rooter/0.2.0")]
+
+//! A [libunftp](https://docs.rs/libunftp/latest/libunftp/) wrapper storage back-end
 //! that roots a user to a specific home directory.
+//!
+//! # Quick start
+//!
+//! Start by implementing the libunftp [`UserDetail`](libunftp::auth::UserDetail) trait
+//! and then follow that by implementing [`UserWithRoot`](crate::UserWithRoot).
+//!
+//! ```rust
+//! use libunftp::auth::UserDetail;
+//! use unftp_sbe_rooter::UserWithRoot;
+//! use std::fmt::Formatter;
+//! use std::path::{Path, PathBuf};
+//!
+//! #[derive(Debug, PartialEq, Eq)]
+//! pub struct User {
+//!     pub username: String,
+//!     pub root: Option<PathBuf>,
+//! }
+//!
+//! impl UserDetail for User {
+//!     fn account_enabled(&self) -> bool {
+//!         true
+//!     }
+//! }
+//!
+//! impl std::fmt::Display for User {
+//!     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+//!         write!(f, "User(username: {:?}", self.username,)
+//!     }
+//! }
+//!
+//! impl UserWithRoot for User {
+//!     fn user_root(&self) -> Option<PathBuf> {
+//!         self.root.clone()
+//!     }
+//! }
+//!
+//! // Return type omited for brevity.
+//! fn create_rooted_storage_backend() {
+//!     use unftp_sbe_fs::{Filesystem, Meta};
+//!     let _backend = Box::new(move || {
+//!         unftp_sbe_rooter::RooterVfs::<Filesystem, User, Meta>::new(Filesystem::new("/srv/ftp"))
+//!     });
+//! }
+//!
+// ```
 
 use async_trait::async_trait;
 use libunftp::{
@@ -14,7 +64,9 @@ use std::marker::PhantomData;
 use std::path::{Component, Path, PathBuf};
 use tokio::io::AsyncRead;
 
-/// A virtual file system for libunftp that wraps other file systems
+/// A virtual file system for libunftp that wraps other file systems.
+///
+/// Use the
 #[derive(Debug)]
 pub struct RooterVfs<Delegate, User, Meta>
 where
@@ -27,9 +79,10 @@ where
     y: PhantomData<User>,
 }
 
-/// Used by [RooterVfs] to obtain the user's root path from a [UserDetail](libunftp::auth::UserDetail) implementation
+/// Used by [RooterVfs] to obtain the user's root path from a [UserDetail](libunftp::auth::UserDetail)
+/// implementation.
 pub trait UserWithRoot: UserDetail {
-    /// Returns the relative path to the user's root if it exists otherwise null.
+    /// Returns the relative path to the user's root if it exists otherwise None.
     fn user_root(&self) -> Option<PathBuf>;
 }
 
@@ -39,6 +92,7 @@ where
     User: UserWithRoot,
     Meta: Metadata + Debug + Sync + Send,
 {
+    /// Creates a new instance of [RooterVfs](crate::RooterVfs).
     pub fn new(inner: Delegate) -> Self {
         RooterVfs {
             inner,
@@ -47,7 +101,7 @@ where
         }
     }
 
-    pub fn new_path<'a>(user: &User, requested_path: &'a Path) -> Cow<'a, Path> {
+    pub(crate) fn new_path<'a>(user: &User, requested_path: &'a Path) -> Cow<'a, Path> {
         if let Some(user_root) = user.user_root() {
             Cow::Owned(Self::root_to(user_root.as_os_str(), requested_path).unwrap())
         } else {
