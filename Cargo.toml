@@ -1,6 +1,6 @@
 [package]
 name = "unftp-sbe-rooter"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 authors = ["Hannes de Jager <hannes.de.jager@gmail.com>"]
 description = "A libunftp wrapper storage back-end that roots a user to a specific home directory."
@@ -15,10 +15,10 @@ documentation = "https://docs.rs/unftp-sbe-rooter"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-async-trait = "0.1.73"
-libunftp = "0.19.0"
-tokio = { version = "1.32.0" }
+async-trait = "0.1.80"
+libunftp = "0.20.0"
+tokio = { version = "1.37.0" }
 
 [dev-dependencies]
 pretty_assertions = "1.4.0"
-unftp-sbe-fs = "0.2.3"
+unftp-sbe-fs = "0.2.5"
