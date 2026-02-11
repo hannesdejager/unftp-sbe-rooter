@@ -8,11 +8,11 @@
 //!
 //! # Quick start
 //!
-//! Start by implementing the libunftp [`UserDetail`](libunftp::auth::UserDetail) trait
+//! Start by implementing the unftp-core [`UserDetail`](unftp_core::auth::UserDetail) trait
 //! and then follow that by implementing [`UserWithRoot`](crate::UserWithRoot).
 //!
 //! ```rust
-//! use libunftp::auth::UserDetail;
+//! use unftp_core::auth::UserDetail;
 //! use unftp_sbe_rooter::UserWithRoot;
 //! use std::fmt::Formatter;
 //! use std::path::{Path, PathBuf};
@@ -45,17 +45,14 @@
 //! fn create_rooted_storage_backend() {
 //!     use unftp_sbe_fs::{Filesystem, Meta};
 //!     let _backend = Box::new(move || {
-//!         unftp_sbe_rooter::RooterVfs::<Filesystem, User, Meta>::new(Filesystem::new("/srv/ftp"))
+//!         unftp_sbe_rooter::RooterVfs::<Filesystem, User,
+//!         Meta>::new(Filesystem::new("/srv/ftp").unwrap())
 //!     });
 //! }
 //!
 // ```
 
 use async_trait::async_trait;
-use libunftp::{
-    auth::UserDetail,
-    storage::{Fileinfo, Metadata, Result, StorageBackend},
-};
 use std::borrow::Cow;
 use std::ffi::{OsStr, OsString};
 use std::fmt::Debug;
@@ -63,6 +60,10 @@ use std::io::{Cursor, Error};
 use std::marker::PhantomData;
 use std::path::{Component, Path, PathBuf};
 use tokio::io::AsyncRead;
+use unftp_core::{
+    auth::UserDetail,
+    storage::{Fileinfo, Metadata, Result, StorageBackend},
+};
 
 /// A virtual file system for libunftp that wraps other file systems.
 ///
@@ -79,7 +80,7 @@ where
     y: PhantomData<User>,
 }
 
-/// Used by [RooterVfs] to obtain the user's root path from a [UserDetail](libunftp::auth::UserDetail)
+/// Used by [RooterVfs] to obtain the user's root path from a [UserDetail](unftp_core::auth::UserDetail)
 /// implementation.
 pub trait UserWithRoot: UserDetail {
     /// Returns the relative path to the user's root if it exists otherwise None.
@@ -305,10 +306,10 @@ where
 
 #[cfg(test)]
 mod tests {
-    use libunftp::auth::UserDetail;
     use pretty_assertions::assert_eq;
     use std::fmt::Formatter;
     use std::path::{Path, PathBuf};
+    use unftp_core::auth::UserDetail;
 
     #[derive(Debug, PartialEq, Eq)]
     pub struct User {
